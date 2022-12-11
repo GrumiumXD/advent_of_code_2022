@@ -7,7 +7,8 @@
 // use day07;
 // use day08;
 // use day09;
-use day10;
+// use day10;
+use day11;
 use std::fs::read_to_string;
 
 fn main() {
@@ -74,10 +75,17 @@ fn main() {
     // let result = day09::puzzle_2(&input);
     // println!("puzzle 2: {}", result);
 
-    println!("Day 10");
-    let input = read_to_string("inputs/day10.txt").unwrap();
-    let result = day10::puzzle_1(&input);
+    // println!("Day 10");
+    // let input = read_to_string("inputs/day10.txt").unwrap();
+    // let result = day10::puzzle_1(&input);
+    // println!("puzzle 1: {}", result);
+    // let result = day10::puzzle_2(&input);
+    // println!("puzzle 2: \n{}", result);
+
+    println!("Day 11");
+    let input = read_to_string("inputs/day11.txt").unwrap();
+    let result = day11::puzzle_1(&input);
     println!("puzzle 1: {}", result);
-    let result = day10::puzzle_2(&input);
-    println!("puzzle 2: \n{}", result);
+    let result = day11::puzzle_2(&input);
+    println!("puzzle 2: {}", result);
 }
