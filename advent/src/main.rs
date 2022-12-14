@@ -78,10 +78,17 @@ fn main() {
     // let result = day11::puzzle_2(&input);
     // println!("puzzle 2: {}", result);
 
-    println!("Day 12");
-    let input = read_to_string("inputs/day12.txt").unwrap();
-    let result = day12::puzzle_1(&input);
+    // println!("Day 12");
+    // let input = read_to_string("inputs/day12.txt").unwrap();
+    // let result = day12::puzzle_1(&input);
+    // println!("puzzle 1: {}", result);
+    // let result = day12::puzzle_2(&input);
+    // println!("puzzle 2: {}", result);
+
+    println!("Day 13");
+    let input = read_to_string("inputs/day13.txt").unwrap();
+    let result = day13::puzzle_1(&input);
     println!("puzzle 1: {}", result);
-    let result = day12::puzzle_2(&input);
+    let result = day13::puzzle_2(&input);
     println!("puzzle 2: {}", result);
 }
