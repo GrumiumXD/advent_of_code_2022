@@ -96,6 +96,16 @@ fn build_graph(input: &str) -> HashMap<String, Valve> {
     valves
 }
 
+#[cached(
+    key = "String",
+    convert = r#"{        
+        let start = "".to_string();
+        format!("{}-{}-{}-{}", current_value, current_valve, minutes, closed_valves.iter().fold(start, |acc, &curr| {
+                format!("{}{},", acc, curr)
+            })
+        )
+    }"#
+)]
 fn search(
     valves: &HashMap<String, Valve>,
     current_value: u32,
@@ -163,75 +173,80 @@ fn search_elephant(
     let small = if me.1 < elephant.1 { &me } else { &elephant };
     let big = if me.1 >= elephant.1 { &me } else { &elephant };
 
-    let mut result = current_value;
+    // filter out all possible targets
+    let small_paths = valves[small.0]
+        .paths
+        .iter()
+        .filter_map(|(p, d)| {
+            if closed_valves.contains(p.as_str()) || *d + 1 > small.1 {
+                return None;
+            }
+            Some((p, *d, valves[p].flow))
+        })
+        .collect::<Vec<_>>();
 
-    if valves.len() > closed_valves.len() {
-        let my_paths = valves[small.0].paths.clone();
-        let elephants_paths = valves[big.0].paths.clone();
-
-        let my_best = my_paths
-            .iter()
-            .map(|(p, d)| {
-                // skip closed valves and not reachable
-                if closed_valves.contains(p.as_str()) || *d + 1 > small.1 {
-                    return current_value;
-                }
-                let new_minutes = small.1 - d - 1;
-                // add the new valve to the closed ones
-                let mut new_closed = closed_valves.clone();
-                new_closed.insert(p.as_str());
-                // get the flow rate for the closed one
-                let flow = valves[p].flow;
-
-                // recursevily calculate the value for the newly closed valve
-                let new_value = search_elephant(
-                    valves,
-                    current_value + new_minutes * flow,
-                    (p, new_minutes),
-                    (big.0, big.1),
-                    &mut new_closed,
-                );
-
-                new_value
-            })
-            .max();
-
-        let elephants_best = elephants_paths
-            .iter()
-            .map(|(p, d)| {
-                // skip closed valves and not reachable
-                if closed_valves.contains(p.as_str()) || *d + 1 > big.1 {
-                    return current_value;
-                }
-                let new_minutes = big.1 - d - 1;
-                // add the new valve to the closed ones
-                let mut new_closed = closed_valves.clone();
-                new_closed.insert(p.as_str());
-                // get the flow rate for the closed one
-                let flow = valves[p].flow;
-
-                // recursevily calculate the value for the newly closed valve
-                let new_value = search_elephant(
-                    valves,
-                    current_value + new_minutes * flow,
-                    (small.0, small.1),
-                    (p, new_minutes),
-                    &mut new_closed,
-                );
-
-                new_value
-            })
-            .max();
-
-        result = match (my_best, elephants_best) {
-            (None, None) => result,
-            (None, Some(e)) => e,
-            (Some(m), None) => m,
-            (Some(m), Some(e)) => m.max(e),
-        }
+    // jump to the single path implementation if one person has exhausted its possible paths
+    if small_paths.is_empty() {
+        return search(valves, current_value, big.0, big.1, closed_valves);
     }
 
-    result
+    // let mut result = current_value;
+
+    let small_best = small_paths
+        .iter()
+        .map(|(p, d, f)| {
+            let new_minutes = small.1 - *d - 1;
+            // add the new valve to the closed ones
+            let mut new_closed = closed_valves.clone();
+            new_closed.insert(p.as_str());
+
+            // recursevily calculate the value for the newly closed valve
+            search_elephant(
+                valves,
+                current_value + new_minutes * f,
+                (p, new_minutes),
+                (big.0, big.1),
+                &mut new_closed,
+            )
+        })
+        .max();
+
+    let big_paths = valves[big.0]
+        .paths
+        .iter()
+        .filter_map(|(p, d)| {
+            if closed_valves.contains(p.as_str()) || *d + 1 > small.1 {
+                return None;
+            }
+            Some((p, *d, valves[p].flow))
+        })
+        .collect::<Vec<_>>();
+
+    let big_best = big_paths
+        .iter()
+        .map(|(p, d, f)| {
+            let new_minutes = big.1 - *d - 1;
+            // add the new valve to the closed ones
+            let mut new_closed = closed_valves.clone();
+            new_closed.insert(p.as_str());
+
+            // recursevily calculate the value for the newly closed valve
+            search_elephant(
+                valves,
+                current_value + new_minutes * f,
+                (small.0, small.1),
+                (p, new_minutes),
+                &mut new_closed,
+            )
+        })
+        .max();
+
+    match (small_best, big_best) {
+        (None, None) => current_value,
+        (None, Some(e)) => e,
+        (Some(m), None) => m,
+        (Some(m), Some(e)) => m.max(e),
+    }
 }
 
 pub fn puzzle_1(input: &str) -> String {
