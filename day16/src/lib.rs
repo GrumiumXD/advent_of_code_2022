@@ -1,10 +1,6 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{BTreeSet, HashMap, HashSet, VecDeque};
 
-use petgraph::{
-    algo::dijkstra,
-    graph::{Graph, NodeIndex},
-    Undirected,
-};
+use cached::proc_macro::cached;
 
 use nom::{
     branch::alt,
@@ -14,12 +10,6 @@ use nom::{
     sequence::{preceded, separated_pair},
     IResult, Parser,
 };
-
-// #[derive(Debug)]
-// struct Valve {
-//     flow: u32,
-//     paths: Vec<String>,
-// }
 
 #[derive(Debug)]
 struct Valve {
@@ -106,187 +96,160 @@ fn build_graph(input: &str) -> HashMap<String, Valve> {
     valves
 }
 
-// fn parse_tunnels(
-//     input: &str,
-// ) ->
-//     HashMap<String, ValveWithDistance>
-// {
-//     let (_input, valves) = parse_valves(input).unwrap();
+fn search(
+    valves: &HashMap<String, Valve>,
+    current_value: u32,
+    current_valve: &str,
+    minutes: u32,
+    closed_valves: &mut BTreeSet<&str>,
+) -> u32 {
+    let mut result = current_value;
 
-//     let mut lookup = HashMap::new();
-//     // add the edges
-//     for (idx, v) in valves.iter().enumerate() {
-//         let ni = NodeIndex::new(idx);
+    if valves.len() != closed_valves.len() {
+        let paths = valves[current_valve].paths.clone();
 
-//         // update the lookup table
-//         lookup.insert(v.0.to_string(), (ni, v.1.flow));
-//     }
+        let best = paths
+            .iter()
+            .map(|(p, d)| {
+                // skip closed valves and not reachable
+                if closed_valves.contains(p.as_str()) || *d + 1 > minutes {
+                    return current_value;
+                }
+                let new_minutes = minutes - d - 1;
+                // add the new valve to the closed ones
+                let mut new_closed = closed_valves.clone();
+                new_closed.insert(p.as_str());
+                // get the flow rate for the closed one
+                let flow = valves[p].flow;
 
-//     let edges = valves
-//         .iter()
-//         .flat_map(|(k, v)| {
-//             let l = &lookup;
-//             let src = l[k].0;
+                // recursevily calculate the value for the newly closed valve
+                let new_value = search(
+                    valves,
+                    current_value + new_minutes * flow,
+                    p,
+                    new_minutes,
+                    &mut new_closed,
+                );
 
-//             v.paths.iter().map(move |d| {
-//                 let dest = l[d].0;
+                new_value
+            })
+            .max();
 
-//                 (src.clone(), dest.clone())
-//             })
-//         })
-//         .collect::<Vec<_>>();
+        // pick the best best path
+        if let Some(b) = best {
+            result = result.max(b);
+        }
+    }
+    result
+}
 
-//     let graph = Graph::<(), u32, Undirected>::from_edges(edges);
+#[cached(
+    key = "String",
+    convert = r#"{        
+        let start = "".to_string();
+        format!("{}-{}-{}-{}-{}-{}", current_value, me.0, me.1, elephant.0, elephant.1, closed_valves.iter().fold(start, |acc, &curr| {
+                format!("{}{},", acc, curr)
+            })
+        )
+    }"#
+)]
+fn search_elephant(
+    valves: &HashMap<String, Valve>,
+    current_value: u32,
+    me: (&str, u32),
+    elephant: (&str, u32),
+    closed_valves: &mut BTreeSet<&str>,
+) -> u32 {
+    let small = if me.1 < elephant.1 { &me } else { &elephant };
+    let big = if me.1 >= elephant.1 { &me } else { &elephant };
 
-//     let costs = graph
-//         .node_indices()
-//         .map(|idx| (idx, dijkstra(&graph, idx, None, |_| 1 as u32)))
-//         .collect::<HashMap<_, _>>();
+    let mut result = current_value;
 
-//     let final = lookup.into_iter().filter_map(|(k, v)| {
+    if valves.len() > closed_valves.len() {
+        let my_paths = valves[small.0].paths.clone();
+        let elephants_paths = valves[big.0].paths.clone();
 
-//     });
+        let my_best = my_paths
+            .iter()
+            .map(|(p, d)| {
+                // skip closed valves and not reachable
+                if closed_valves.contains(p.as_str()) || *d + 1 > small.1 {
+                    return current_value;
+                }
+                let new_minutes = small.1 - d - 1;
+                // add the new valve to the closed ones
+                let mut new_closed = closed_valves.clone();
+                new_closed.insert(p.as_str());
+                // get the flow rate for the closed one
+                let flow = valves[p].flow;
 
-//     // (lookup, graph)
-// }
+                // recursevily calculate the value for the newly closed valve
+                let new_value = search_elephant(
+                    valves,
+                    current_value + new_minutes * flow,
+                    (p, new_minutes),
+                    (big.0, big.1),
+                    &mut new_closed,
+                );
 
-// fn check_path(
-//     valves: &HashMap<String, Valve>,
-//     useless: &Vec<String>,
-//     current_node: &str,
-//     current_release: u32,
-//     minutes: u32,
-// ) -> u32 {
-//     if minutes == 0 {
-//         return current_release;
-//     }
-//     if useless.len() == valves.len() {
-//         return current_release;
-//     }
+                new_value
+            })
+            .max();
 
-//     let path_count = valves[current_node].paths.len();
-//     let range = if !useless.iter().any(|s| s == current_node) {
-//         0..path_count + 1
-//     } else {
-//         0..path_count
-//     };
+        let elephants_best = elephants_paths
+            .iter()
+            .map(|(p, d)| {
+                // skip closed valves and not reachable
+                if closed_valves.contains(p.as_str()) || *d + 1 > big.1 {
+                    return current_value;
+                }
+                let new_minutes = big.1 - d - 1;
+                // add the new valve to the closed ones
+                let mut new_closed = closed_valves.clone();
+                new_closed.insert(p.as_str());
+                // get the flow rate for the closed one
+                let flow = valves[p].flow;
 
-//     range
-//         .map(|i| {
-//             if i == path_count {
-//                 // open the current valve
-//                 let mut useless = useless.clone();
-//                 useless.push(current_node.to_string());
+                // recursevily calculate the value for the newly closed valve
+                let new_value = search_elephant(
+                    valves,
+                    current_value + new_minutes * flow,
+                    (small.0, small.1),
+                    (p, new_minutes),
+                    &mut new_closed,
+                );
 
-//                 let current_release = current_release + (valves[current_node].flow * (minutes - 1));
-//                 return check_path(valves, &useless, current_node, current_release, minutes - 1);
-//             }
-//             // go down the path
-//             let current_node = valves[current_node].paths[i].as_str();
-//             check_path(valves, useless, current_node, current_release, minutes - 1)
-//         })
-//         .max()
-//         .unwrap()
-// }
+                new_value
+            })
+            .max();
 
-fn search(valves: &HashMap<String, Valve>, minutes: u32, current: &String, opened: Vec<&String>) {
-    todo!()
+        result = match (my_best, elephants_best) {
+            (None, None) => result,
+            (None, Some(e)) => e,
+            (Some(m), None) => m,
+            (Some(m), Some(e)) => m.max(e),
+        }
+    }
+
+    result
 }
 
 pub fn puzzle_1(input: &str) -> String {
     let valves = build_graph(input);
 
-    // let (lookup, graph) = parse_tunnels(input);
+    let mut closed = BTreeSet::from(["AA"]);
+    let result = search(&valves, 0, "AA", 30, &mut closed);
 
-    // let mut to_open = lookup
-    //     .iter()
-    //     .filter_map(|(k, v)| {
-    //         if v.1 > 0 {
-    //             return Some(k.as_str());
-    //         }
-
-    //         None
-    //     })
-    //     .collect::<Vec<_>>();
-
-    // let mut current = "AA";
-    // let mut minutes = 30;
-    // let mut pressure = 0;
-
-    // // get all shortest paths
-    // let costs = graph
-    //     .node_indices()
-    //     .map(|idx| (idx, dijkstra(&graph, idx, None, |_| 1 as u32)))
-    //     .collect::<HashMap<_, _>>();
-
-    // loop {
-    //     dbg!(current);
-    //     let node = lookup[current].0;
-
-    //     let current_costs = &costs[&node];
-
-    //     let values = to_open
-    //         .iter()
-    //         .filter_map(|id| {
-    //             let n = lookup[*id];
-    //             let path = current_costs[&n.0];
-    //             let flow = n.1;
-
-    //             let minute_costs = path + 1;
-    //             if minute_costs >= minutes {
-    //                 return None;
-    //             }
-    //             let released_pressure = (minutes - minute_costs) * flow;
-
-    //             Some((*id, minute_costs, released_pressure))
-    //         })
-    //         .inspect(|v| {
-    //             dbg!(v);
-    //         });
-
-    //     let best_option = values.max_by(|a, b| a.2.cmp(&b.2));
-
-    //     dbg!(best_option);
-
-    //     if let Some(target) = best_option {
-    //         minutes -= target.1;
-    //         pressure += target.2;
-    //         to_open.retain(|s| *s != target.0);
-    //         current = target.0;
-    //     } else {
-    //         // no possible path exists anymore
-    //         break;
-    //     }
-    // }
-
-    // let (_input, valves) = parse_valves(input).unwrap();
-
-    // // collect all vales in a hash map
-    // let valves = valves.into_iter().collect::<HashMap<_, _>>();
-
-    // let useless_valves = valves
-    //     .iter()
-    //     .filter_map(|(k, v)| {
-    //         if v.flow == 0 {
-    //             return Some(k.clone());
-    //         }
-
-    //         None
-    //     })
-    //     .collect::<Vec<String>>();
-
-    // // dbg!(valves);
-    // // dbg!(useless_valves);
-
-    // let max_release = check_path(&valves, &useless_valves, "AA", 0, 30);
-
-    // max_release.to_string()
-
-    "abc".to_string()
+    result.to_string()
 }
 
 pub fn puzzle_2(input: &str) -> String {
-    "abc".to_string()
+    let valves = build_graph(input);
+
+    let mut closed = BTreeSet::from(["AA"]);
+    let result = search_elephant(&valves, 0, ("AA", 26), ("AA", 26), &mut closed);
+
+    result.to_string()
 }
 
 #[cfg(test)]
@@ -312,9 +275,8 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
     }
 
     #[test]
-    #[ignore]
     fn p2() {
         let result = puzzle_2(INPUT);
-        assert_eq!(result, "56000011");
+        assert_eq!(result, "1707");
     }
 }
