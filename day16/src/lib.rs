@@ -153,106 +153,106 @@ fn search(
     result
 }
 
-#[cached(
-    key = "String",
-    convert = r#"{        
-        let start = "".to_string();
-        format!("{}-{}-{}-{}-{}-{}", current_value, me.0, me.1, elephant.0, elephant.1, closed_valves.iter().fold(start, |acc, &curr| {
-                format!("{}{},", acc, curr)
-            })
-        )
-    }"#
-)]
-fn search_elephant(
-    valves: &HashMap<String, Valve>,
-    current_value: u32,
-    me: (&str, u32),
-    elephant: (&str, u32),
-    closed_valves: &mut BTreeSet<&str>,
-) -> u32 {
-    let small = if me.1 < elephant.1 { &me } else { &elephant };
-    let big = if me.1 >= elephant.1 { &me } else { &elephant };
+// #[cached(
+//     key = "String",
+//     convert = r#"{
+//         let start = "".to_string();
+//         format!("{}-{}-{}-{}-{}-{}", current_value, me.0, me.1, elephant.0, elephant.1, closed_valves.iter().fold(start, |acc, &curr| {
+//                 format!("{}{},", acc, curr)
+//             })
+//         )
+//     }"#
+// )]
+// fn search_elephant(
+//     valves: &HashMap<String, Valve>,
+//     current_value: u32,
+//     me: (&str, u32),
+//     elephant: (&str, u32),
+//     closed_valves: &mut BTreeSet<&str>,
+// ) -> u32 {
+//     let small = if me.1 < elephant.1 { &me } else { &elephant };
+//     let big = if me.1 >= elephant.1 { &me } else { &elephant };
 
-    // filter out all possible targets
-    let small_paths = valves[small.0]
-        .paths
-        .iter()
-        .filter_map(|(p, d)| {
-            if closed_valves.contains(p.as_str()) || *d + 1 > small.1 {
-                return None;
-            }
-            Some((p, *d, valves[p].flow))
-        })
-        .collect::<Vec<_>>();
+//     // filter out all possible targets
+//     let small_paths = valves[small.0]
+//         .paths
+//         .iter()
+//         .filter_map(|(p, d)| {
+//             if closed_valves.contains(p.as_str()) || *d + 1 > small.1 {
+//                 return None;
+//             }
+//             Some((p, *d, valves[p].flow))
+//         })
+//         .collect::<Vec<_>>();
 
-    // jump to the single path implementation if one person has exhausted its possible paths
-    if small_paths.is_empty() {
-        return search(valves, current_value, big.0, big.1, closed_valves);
-    }
+//     // jump to the single path implementation if one person has exhausted its possible paths
+//     if small_paths.is_empty() {
+//         return search(valves, current_value, big.0, big.1, closed_valves);
+//     }
 
-    // let mut result = current_value;
+//     // let mut result = current_value;
 
-    let small_best = small_paths
-        .iter()
-        .map(|(p, d, f)| {
-            let new_minutes = small.1 - *d - 1;
-            // add the new valve to the closed ones
-            let mut new_closed = closed_valves.clone();
-            new_closed.insert(p.as_str());
+//     let small_best = small_paths
+//         .iter()
+//         .map(|(p, d, f)| {
+//             let new_minutes = small.1 - *d - 1;
+//             // add the new valve to the closed ones
+//             let mut new_closed = closed_valves.clone();
+//             new_closed.insert(p.as_str());
 
-            // recursevily calculate the value for the newly closed valve
-            search_elephant(
-                valves,
-                current_value + new_minutes * f,
-                (p, new_minutes),
-                (big.0, big.1),
-                &mut new_closed,
-            )
-        })
-        .max();
+//             // recursevily calculate the value for the newly closed valve
+//             search_elephant(
+//                 valves,
+//                 current_value + new_minutes * f,
+//                 (p, new_minutes),
+//                 (big.0, big.1),
+//                 &mut new_closed,
+//             )
+//         })
+//         .max();
 
-    let big_paths = valves[big.0]
-        .paths
-        .iter()
-        .filter_map(|(p, d)| {
-            if closed_valves.contains(p.as_str()) || *d + 1 > small.1 {
-                return None;
-            }
-            Some((p, *d, valves[p].flow))
-        })
-        .collect::<Vec<_>>();
+//     let big_paths = valves[big.0]
+//         .paths
+//         .iter()
+//         .filter_map(|(p, d)| {
+//             if closed_valves.contains(p.as_str()) || *d + 1 > small.1 {
+//                 return None;
+//             }
+//             Some((p, *d, valves[p].flow))
+//         })
+//         .collect::<Vec<_>>();
 
-    let big_best = big_paths
-        .iter()
-        .map(|(p, d, f)| {
-            let new_minutes = big.1 - *d - 1;
-            // add the new valve to the closed ones
-            let mut new_closed = closed_valves.clone();
-            new_closed.insert(p.as_str());
+//     let big_best = big_paths
+//         .iter()
+//         .map(|(p, d, f)| {
+//             let new_minutes = big.1 - *d - 1;
+//             // add the new valve to the closed ones
+//             let mut new_closed = closed_valves.clone();
+//             new_closed.insert(p.as_str());
 
-            // recursevily calculate the value for the newly closed valve
-            search_elephant(
-                valves,
-                current_value + new_minutes * f,
-                (small.0, small.1),
-                (p, new_minutes),
-                &mut new_closed,
-            )
-        })
-        .max();
+//             // recursevily calculate the value for the newly closed valve
+//             search_elephant(
+//                 valves,
+//                 current_value + new_minutes * f,
+//                 (small.0, small.1),
+//                 (p, new_minutes),
+//                 &mut new_closed,
+//             )
+//         })
+//         .max();
 
-    match (small_best, big_best) {
-        (None, None) => current_value,
-        (None, Some(e)) => e,
-        (Some(m), None) => m,
-        (Some(m), Some(e)) => m.max(e),
-    }
-}
+//     match (small_best, big_best) {
+//         (None, None) => current_value,
+//         (None, Some(e)) => e,
+//         (Some(m), None) => m,
+//         (Some(m), Some(e)) => m.max(e),
+//     }
+// }
 
 pub fn puzzle_1(input: &str) -> String {
     let valves = build_graph(input);
 
-    let mut closed = BTreeSet::from(["AA"]);
+    let mut closed = BTreeSet::from([]);
     let result = search(&valves, 0, "AA", 30, &mut closed);
 
     result.to_string()
@@ -261,8 +261,48 @@ pub fn puzzle_1(input: &str) -> String {
 pub fn puzzle_2(input: &str) -> String {
     let valves = build_graph(input);
 
-    let mut closed = BTreeSet::from(["AA"]);
-    let result = search_elephant(&valves, 0, ("AA", 26), ("AA", 26), &mut closed);
+    let useful_valves = valves
+        .iter()
+        .filter_map(|(k, _)| {
+            if k == "AA" {
+                return None;
+            }
+            Some(k.as_str())
+        })
+        .collect::<Vec<_>>();
+
+    let mut result = 0;
+
+    let combinations = (1 << useful_valves.len()) - 1;
+
+    for i in 0..combinations {
+        let mut closed_a = useful_valves
+            .iter()
+            .enumerate()
+            .filter_map(|(idx, v)| {
+                if ((1 << idx) & i) != 0 {
+                    return Some(*v);
+                }
+                None
+            })
+            .collect::<BTreeSet<_>>();
+
+        let mut closed_b = useful_valves
+            .iter()
+            .enumerate()
+            .filter_map(|(idx, v)| {
+                if ((1 << idx) & i) == 0 {
+                    return Some(*v);
+                }
+                None
+            })
+            .collect::<BTreeSet<_>>();
+
+        let round = search(&valves, 0, "AA", 26, &mut closed_a)
+            + search(&valves, 0, "AA", 26, &mut closed_b);
+
+        result = result.max(round);
+    }
 
     result.to_string()
 }
