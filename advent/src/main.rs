@@ -106,10 +106,17 @@ fn main() {
     // let result = day15::puzzle_2(&input, (0, 4000000));
     // println!("puzzle 2: {}", result);
 
-    println!("Day 16");
-    let input = read_to_string("inputs/day16.txt").unwrap();
-    let result = day16::puzzle_1(&input);
+    // println!("Day 16");
+    // let input = read_to_string("inputs/day16.txt").unwrap();
+    // let result = day16::puzzle_1(&input);
+    // println!("puzzle 1: {}", result);
+    // let result = day16::puzzle_2(&input);
+    // println!("puzzle 2: {}", result);
+
+    println!("Day 17");
+    let input = read_to_string("inputs/day17.txt").unwrap();
+    let result = day17::puzzle_1(&input);
     println!("puzzle 1: {}", result);
-    let result = day16::puzzle_2(&input);
+    let result = day17::puzzle_2(&input);
     println!("puzzle 2: {}", result);
 }
