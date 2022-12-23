@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::read_to_string};
+use std::fs::read_to_string;
 
 fn main() {
     // println!("Day 01");
@@ -148,28 +148,35 @@ fn main() {
     // let result = day21::puzzle_2(&input);
     // println!("puzzle 2: {}", result);
 
-    println!("Day 22");
-    let input = read_to_string("inputs/day22.txt").unwrap();
-    let result = day22::puzzle_1(&input);
-    println!("puzzle 1: {}", result);
+    // println!("Day 22");
+    // let input = read_to_string("inputs/day22.txt").unwrap();
+    // let result = day22::puzzle_1(&input);
+    // println!("puzzle 1: {}", result);
 
-    use day22::Dir::*;
-    let lookup = HashMap::from([
-        ((1, 0, Up), (0, 3, Right)),
-        ((0, 3, Left), (1, 0, Down)),
-        ((2, 0, Up), (0, 3, Up)),
-        ((0, 3, Down), (2, 0, Down)),
-        ((2, 0, Right), (1, 2, Left)),
-        ((1, 2, Right), (2, 0, Left)),
-        ((2, 0, Down), (1, 1, Left)),
-        ((1, 1, Right), (2, 0, Up)),
-        ((1, 2, Down), (0, 3, Left)),
-        ((0, 3, Right), (1, 2, Up)),
-        ((0, 2, Left), (1, 0, Right)),
-        ((1, 0, Left), (0, 2, Right)),
-        ((0, 2, Up), (1, 1, Right)),
-        ((1, 1, Left), (0, 2, Down)),
-    ]);
-    let result = day22::puzzle_2(&input, 50, lookup);
+    // use day22::Dir::*;
+    // let lookup = HashMap::from([
+    //     ((1, 0, Up), (0, 3, Right)),
+    //     ((0, 3, Left), (1, 0, Down)),
+    //     ((2, 0, Up), (0, 3, Up)),
+    //     ((0, 3, Down), (2, 0, Down)),
+    //     ((2, 0, Right), (1, 2, Left)),
+    //     ((1, 2, Right), (2, 0, Left)),
+    //     ((2, 0, Down), (1, 1, Left)),
+    //     ((1, 1, Right), (2, 0, Up)),
+    //     ((1, 2, Down), (0, 3, Left)),
+    //     ((0, 3, Right), (1, 2, Up)),
+    //     ((0, 2, Left), (1, 0, Right)),
+    //     ((1, 0, Left), (0, 2, Right)),
+    //     ((0, 2, Up), (1, 1, Right)),
+    //     ((1, 1, Left), (0, 2, Down)),
+    // ]);
+    // let result = day22::puzzle_2(&input, 50, lookup);
+    // println!("puzzle 2: {}", result);
+
+    println!("Day 23");
+    let input = read_to_string("inputs/day23.txt").unwrap();
+    let result = day23::puzzle_1(&input);
+    println!("puzzle 1: {}", result);
+    let result = day23::puzzle_2(&input);
     println!("puzzle 2: {}", result);
 }
