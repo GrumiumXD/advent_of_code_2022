@@ -173,10 +173,17 @@ fn main() {
     // let result = day22::puzzle_2(&input, 50, lookup);
     // println!("puzzle 2: {}", result);
 
-    println!("Day 23");
-    let input = read_to_string("inputs/day23.txt").unwrap();
-    let result = day23::puzzle_1(&input);
+    // println!("Day 23");
+    // let input = read_to_string("inputs/day23.txt").unwrap();
+    // let result = day23::puzzle_1(&input);
+    // println!("puzzle 1: {}", result);
+    // let result = day23::puzzle_2(&input);
+    // println!("puzzle 2: {}", result);
+
+    println!("Day 24");
+    let input = read_to_string("inputs/day24.txt").unwrap();
+    let result = day24::puzzle_1(&input);
     println!("puzzle 1: {}", result);
-    let result = day23::puzzle_2(&input);
+    let result = day24::puzzle_2(&input);
     println!("puzzle 2: {}", result);
 }
